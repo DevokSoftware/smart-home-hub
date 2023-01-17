@@ -11,25 +11,24 @@ public class VoiceRecognition {
         Configuration config = new Configuration();
 
         config.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
-        config.setDictionaryPath("src\\main\\resources\\5057.dic");
-        config.setLanguageModelPath("src\\main\\resources\\5057.lm");
+        // config.setDictionaryPath("src\\main\\resources\\commands.dic");
+        // config.setLanguageModelPath("src\\main\\resources\\commands.lm");
+
+        config.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+        config.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
 
         try {
             LiveSpeechRecognizer speech = new LiveSpeechRecognizer(config);
             speech.startRecognition(true);
 
-            SpeechResult speechResult = null;
-
+            SpeechResult speechResult;
             while ((speechResult = speech.getResult()) != null) {
                 String voiceCommand = speechResult.getHypothesis();
-                System.out.println("Voice Command is " + voiceCommand);
-
                 if (voiceCommand.equalsIgnoreCase("Open Chrome")) {
-                    Runtime.getRuntime().exec("cmd.exe /c start chrome www.infybuzz.com");
+                    Runtime.getRuntime().exec("cmd.exe /c start chrome www.google.com");
                 } else if (voiceCommand.equalsIgnoreCase("Close Chrome")) {
                     Runtime.getRuntime().exec("cmd.exe /c TASKKILL /IM chrome.exe");
                 }
-
             }
 
         } catch (IOException e) {

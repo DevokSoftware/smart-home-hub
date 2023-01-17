@@ -1,10 +1,14 @@
 package org.devok.smarthome;
 
-import org.devok.smarthome.voicerecognition.VoiceRecognition;
+import java.io.IOException;
+
+import org.devok.smarthome.voicerecognition.ModelTraining;
 
 public class Main {
     public static void main(String[] args) {
         System.out.println("Voice Recognition running!");
-        VoiceRecognition.openChromeTab();
+        //   VoiceRecognition.openChromeTab();
+        ModelTraining.recordVoiceAndCreateFiles();
+        ModelTraining.testModel();
     }
 }
