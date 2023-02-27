@@ -1,52 +1,59 @@
 package org.devok.smarthome.spotify;
 
 import java.io.IOException;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.Optional;
 
 import org.apache.hc.core5.http.ParseException;
-import org.springframework.beans.factory.annotation.Value;
 
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
-import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
 import se.michaelthelin.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
 
-// @Configuration
+
+// TODO - implement Authorization Code Flow in the future
+
 public class SpotifyAuthentication {
-    @Value("${spotify.client.id}")
-    private static String clientId;
-    @Value("${spotify.client.secret}")
-    private static String clientSecret;
+    private static SpotifyAuthentication SpotifyAuthenticationInstance;
+    private SpotifyApi spotifyApi;
 
-    private static final SpotifyApi spotifyApi = new SpotifyApi.Builder()
-            .setClientId(clientId)
-            .setClientSecret(clientSecret)
-            .build();
-    private static final ClientCredentialsRequest clientCredentialsRequest = spotifyApi.clientCredentials()
-            .build();
+    private SpotifyAuthentication() {
+        initializeSpotifyApi();
+        ClientCredentialsRequest clientCredentialsRequest = buildSpotifyCredentials();
+        addAccessTokenToSpotifyApi(getAccessTokenWithCredentials(clientCredentialsRequest).orElseThrow());
+    }
 
-    public static void getClientCredentialsSync() {
+    public static SpotifyAuthentication getInstance() {
+        if (SpotifyAuthenticationInstance == null) {
+            SpotifyAuthenticationInstance = new SpotifyAuthentication();
+        }
+        return SpotifyAuthenticationInstance;
+    }
+
+    public SpotifyApi getSpotifyApi() {
+        return spotifyApi;
+    }
+
+    private void initializeSpotifyApi() {
+        spotifyApi = new SpotifyApi.Builder()
+                .setClientId(SpotifyConfiguration.getClientId())
+                .setClientSecret(SpotifyConfiguration.getClientSecret())
+                .build();
+    }
+
+    private ClientCredentialsRequest buildSpotifyCredentials() {
+        return spotifyApi.clientCredentials()
+                .build();
+    }
+
+    private Optional<String> getAccessTokenWithCredentials(ClientCredentialsRequest clientCredentialsRequest) {
         try {
-            final ClientCredentials clientCredentials = clientCredentialsRequest.execute();
-            spotifyApi.setAccessToken(clientCredentials.getAccessToken());
-            System.out.println("Expires in: " + clientCredentials.getExpiresIn());
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            System.out.println("Error: " + e.getMessage());
+            return Optional.of(clientCredentialsRequest.execute().getAccessToken());
+        } catch (IOException | ParseException | SpotifyWebApiException exception) {
+            return Optional.empty();
         }
     }
 
-    public static void getClientCredentialsAsync() {
-        try {
-            final CompletableFuture<ClientCredentials> clientCredentialsFuture = clientCredentialsRequest.executeAsync();
-            final ClientCredentials clientCredentials = clientCredentialsFuture.join();
-            spotifyApi.setAccessToken(clientCredentials.getAccessToken());
-            System.out.println("Expires in: " + clientCredentials.getExpiresIn());
-        } catch (CompletionException e) {
-            System.out.println("Error: " + e.getCause().getMessage());
-        } catch (CancellationException e) {
-            System.out.println("Async operation cancelled.");
-        }
+    private void addAccessTokenToSpotifyApi(String accessToken) {
+        spotifyApi.setAccessToken(accessToken);
     }
 }
